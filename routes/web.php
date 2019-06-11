@@ -19,7 +19,7 @@ Route::get('/', function() {
 
         $info = explode(',', ($node->filter('.seda-t')) ? trim($node->filter('.seda-t')->text()) : '');
 
-        $test = preg_replace("/[^a-zA-Z0-9\s]/", "", $info[1]);
+        // $test = preg_replace("/[^a-zA-Z0-9\s]/", "", $info[1]);
         return array(
             'title' => $node->filter('.nazev-inzeratu-vypis')->text(),
             'category' => $node->filter('p span')->text(),

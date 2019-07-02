@@ -34,3 +34,44 @@ Route::get('/', function() {
 
     dd($data);
 });
+
+Route::get('/data', function() {
+
+    $crawler = Goutte::request('GET', 'https://resources.workable.com/job-descriptions/');
+
+    $data = $crawler->filter('li')->each(function ($node) {
+
+        $url = '';
+        if (substr($node->filter('a')->attr('href'), -15) == 'job-description') {
+            $url = $node->filter('a')->attr('href');
+        }
+        return array(
+            'url' => $url,
+        );
+    });
+
+    // $URLs = array_filter($data, function($e) {
+    //     return $e['url'] != '';
+    // });
+
+    // dd($URLs);
+
+    $URLs = [
+        // 'url' => 'https://resources.workable.com/staff-accountant-job-description',
+        'url' => 'https://resources.workable.com/night-auditor-job-description',
+    ];
+
+    foreach($URLs as $u){
+
+        $crawler1 = Goutte::request('GET', $u);
+
+        $new = $crawler1->filter('.article-content')->each(function  ($node1)  {
+
+            return array(
+                'test 1' => $node1->filterXPath('//ul/li')->text(),
+            );
+        });
+    }//end of foreach
+
+    dd($new);
+});

@@ -41,37 +41,52 @@ Route::get('/data', function() {
 
     $data = $crawler->filter('li')->each(function ($node) {
 
-        $url = '';
+        $url = ''; $title = '';
         if (substr($node->filter('a')->attr('href'), -15) == 'job-description') {
-            $url = $node->filter('a')->attr('href');
+            $url = $node->filter('a')->attr('href'); // get detail link
+            $title = $node->filter('a')->text(); // job title
         }
-        return array(
-            'url' => $url,
-        );
+        return [
+            'url' => $url, 'title' => $title,
+        ];
     });
 
-    // $URLs = array_filter($data, function($e) {
-    //     return $e['url'] != '';
-    // });
+    $URLs = array_filter($data, function($e) {
+        return $e['url'] != '';
+    });
 
-    // dd($URLs);
+    // $URLs = [
+    //     [
+    //         'url' => 'https://resources.workable.com/night-auditor-job-description',
+    //         'title' => 'Test',
+    //     ]
+    // ];
 
-    $URLs = [
-        // 'url' => 'https://resources.workable.com/staff-accountant-job-description',
-        'url' => 'https://resources.workable.com/night-auditor-job-description',
-    ];
+    $chunk_URLs = array_chunk($URLs, 10); //separate array by 10 chunk
 
-    foreach($URLs as $u){
+    foreach ($chunk_URLs as $chunk) { // chunk to prevent memory exhausting
 
-        $crawler1 = Goutte::request('GET', $u);
+        foreach($chunk as $key => $url){
 
-        $new = $crawler1->filter('.article-content')->each(function  ($node1)  {
+            $crawler1 = Goutte::request('GET', $url['url']);
 
-            return array(
-                'test 1' => $node1->filterXPath('//ul/li')->text(),
-            );
-        });
-    }//end of foreach
+            $new = $crawler1->filter('.article-content')->each(function  ($node1) use($url) {
 
-    dd($new);
+                return array(
+                    'title' => trim($url['title']),
+                    'summary' => $node1->filter('ul')->first()->html(),
+                    'responsibilities' => $node1->filter('ul')->eq(1)->html(),
+                    'requirements' => $node1->filter('ul')->eq(2)->html(),
+                );
+            });
+
+            $job = new \App\Models\JobPlaceholder;
+            $job->title = $new[0]['title'];
+            $job->summary = $new[0]['summary'];
+            $job->responsibilities = $new[0]['responsibilities'];
+            $job->requirements = $new[0]['requirements'];
+            $job->save();
+        }
+    }
+
 });
